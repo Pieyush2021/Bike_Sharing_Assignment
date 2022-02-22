@@ -1,0 +1,620 @@
+# Step 1: Reading and Understanding the Data
+
+
+Let's start with the following steps:
+
+    1. Importing data using the pandas library
+    2. Understanding the structure of the data
+
+# Import the required libraries:
+import warnings
+warnings.filterwarnings('ignore')
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn import linear_model
+from sklearn.linear_model import LinearRegression
+
+#Read the given CSV file:
+
+day = pd.read_csv("day.csv")
+
+day.head(700)
+
+Let's inspect the various aspects of our dataframe
+
+#Determining the number of rows and columns
+day.shape
+
+day.columns
+
+#Checking missing values
+day.isnull().sum()
+
+No missing values in the data set "Day"
+
+#summary of all the numeric columns in the dataset
+day.describe()
+
+#Datatypes of each column
+day.info()
+
+Have to convert all int64 as Object.. because they cannot interpreted as numericals but are categorical lday
+
+
+#Rename the columns for better understanding
+day.rename(columns = {'yr':'Year','mnth':'month','hum':'humidity','cnt':'count'}, inplace = True) 
+day.head()
+
+Mapping Required Variables for better data understanding
+
+day['season'].value_counts()
+
+
+Mapping of Variable Season
+
+def ass_season(x):
+    if x==1:
+        return 'Spring'
+    elif x==2:
+        return 'Summer'
+    elif x==3:
+        return 'Fall'
+    else:
+        return 'Winter'
+    
+    
+day['season'] = day['season'].apply(ass_season)
+        
+
+day['season'].value_counts()
+
+For Month Column:
+
+def ass_mnth(x):
+    return x.map({
+        1:'Jan',
+        2:'Feb',
+        3:'Mar',
+        4:'Apr',
+        5:'May',
+        6:'Jun',
+        7:'Jul',
+        8:'Aug',
+        9:'Sep',
+        10:'Oct',
+        11:'Nov',
+        12:'Dec'        
+    })
+
+day[['month']] = day[['month']].apply(ass_mnth)
+
+day['month'].value_counts()
+
+For Year Column:
+
+day['Year'].value_counts()
+
+def ass_year(y):
+    return y.map({
+        0:'2018',
+        1:'2019'})
+
+day[['Year']] = day[['Year']].apply(ass_year)
+
+day['Year'].value_counts()
+
+For Holiday Column:
+
+
+day['holiday'].value_counts()
+
+def ass_hol(x):
+    return x.map({
+        0:'Working Day',
+        1:'Holiday'})
+
+day[['holiday']] = day[['holiday']].apply(ass_hol)
+
+day['holiday'].value_counts()
+
+For WeekDay Column:
+
+day['weekday'].value_counts()
+
+def ass_week(x):
+    return x.map({
+        0:'Sun',
+        1:'Mon',
+        2:'Tue',
+        3:'Wed',
+        4:'Thu',
+        5:'Fri',
+        6:'Sat',
+                
+    })
+
+day[['weekday']] = day[['weekday']].apply(ass_week)
+
+day['weekday'].value_counts()
+
+For Working Day Column: (Within the Organziation)
+
+day['workingday'].value_counts()
+
+def ass_work(x):
+    return x.map({
+        1:'Working Day',
+        0:'Office Holiday',
+                
+    })
+
+day[['workingday']] = day[['workingday']].apply(ass_work)
+
+day['workingday'].value_counts()
+
+For Weather Column:
+
+day['weathersit'].value_counts()
+
+# weathersit : 
+#1: Clear, Few clouds, Partly cloudy
+#2: Mist, Broken and Few clouds
+#3: Snow, + Light Rain with Thunderstorm and Scattered clouds
+
+
+def ass_weather(x):
+    if x==1:
+        return 'Clear, Few clouds, Partly cloudy'
+    elif x==2:
+        return 'Mist, Broken + Few clouds'
+    elif x==3:
+        return 'Snow + Rain'
+    
+day['weathersit'] = day['weathersit'].apply(ass_weather)
+
+day['weathersit'].value_counts()
+
+# STEP 2: DATA VISUALIZATION
+
+STORING ALL NUMERICAL COLUMNS AS X
+
+num_col = day.describe().columns
+
+num_col
+
+x = num_col
+x
+
+Understanding the Distribution
+
+for col in x:
+    sns.distplot(day[col])
+    plt.title("Distribution for "+col)
+    plt.show();
+    print("*********")
+
+day.info()
+
+day['dteday'] = day['dteday'].astype('datetime64')
+
+day.info()
+
+# Visulaization of All Categorical Columns
+
+As you might have noticed, there are a few categorical variables as well. Let's make a boxplot for some of these variables.
+
+day_categorical = day.select_dtypes(include = ['object'])
+
+len(day_categorical.columns)
+
+day.select_dtypes(include=['object']).columns
+
+plt.figure(figsize=(20,20))
+plt.subplot(3,3,1)
+sns.boxplot(x='season', y='count', data = day)
+plt.subplot(3,3,2)
+sns.boxplot(x='Year', y='count', data = day)
+plt.subplot(3,3,3)
+sns.boxplot(x='month', y='count', data = day)
+plt.subplot(3,3,4)
+sns.boxplot(x='holiday', y='count', data = day)
+plt.subplot(3,3,5)
+sns.boxplot(x='weekday', y='count', data = day)
+plt.subplot(3,3,6)
+sns.boxplot(x='workingday', y='count', data = day)
+plt.subplot(3,3,7)
+sns.boxplot(x='weathersit', y='count', data = day)
+plt.show()
+
+
+
+The plots above shows the relationship between categorical variables and a Target variable.
+Inference:
+    a. Bike Rentals are more during the Fall season and then in summer
+    b. Bike Rentals are more in the year 2019 compared to 2018
+    c. Bike Rentals are more in partly cloudy weather
+    d. Bike Rentals are more on Saturday,wednesday and thursday
+
+#Barplot to see relation between season and count of bike rentals
+sns.barplot('season','count',data=day,palette="rocket",)
+plt.show()
+
+Bike Rentals are more during the Fall season and then in summer
+
+
+#Just to reconfitm our observation
+plt.figure(figsize = (10, 5))
+sns.boxplot(x='season', y='count', hue = 'Year', data=day)
+plt.show()
+
+Weatherist
+
+#Relation between weather and count of bike rentals
+sns.barplot('weathersit','count',palette="muted",data=day)
+plt.show()
+           
+
+Bike Rentals are more in partly cloudy weather
+
+
+Weekday
+
+plt.figure(figsize = (20, 5))
+sns.boxplot(x='season', y='count', hue = 'weekday', data=day)
+plt.show()
+
+Workingday
+
+plt.figure(figsize = (20, 5))
+sns.boxplot(x='workingday', y='count', hue = 'Year', data=day)
+plt.show()
+
+#Relation between month and 
+plt.figure(figsize=(10,5))
+sns.barplot('month','count',hue='Year',data=day, palette='Paired')
+plt.show()
+
+Bike Rentals are more in the year 2019 compared to 2018, and more evident on the month of September. 
+
+
+Year
+
+Just to reconfirm our observations
+
+#Relation between Year and count of bike rentals
+sns.barplot('Year','count',data=day)
+plt.show()
+
+Temperature
+
+#scatter plot for temperature to count
+sns.scatterplot(x='temp',y='count' ,data=day)
+plt.show()
+
+Bike Rentals are observed at higher temperatures
+
+
+Humidity
+
+sns.scatterplot(x='humidity', y='count',data=day)
+plt.show()
+
+Inference - Bike rentals more at high humidity
+
+
+#Removing Instant from X (Numerical Columns)
+
+x
+
+x = x[1:]
+x
+
+day[x].head()
+
+## Analyzing Numerical variables
+sns.pairplot(day[x]);
+
+## HeatMap
+
+day[x].corr()
+
+sns.heatmap(day[x].corr());
+
+sns.heatmap(day[x].corr(),annot=True);
+
+# heatmap
+mask = np.array(day[x].corr())
+mask[np.tril_indices_from(mask)] = False
+
+fig, ax = plt.subplots()
+fig.set_size_inches(10,10)
+sns.heatmap(day[x].corr(), mask=mask, vmax=0.8, square=True, annot=True);
+
+As is visible from the pairplot and the heatmap, we can see temp, atemp, casual,registered,instant variables are correlated to 'count' variable
+
+We can also see some other variables are also most correlated.
+Both the plots above helps to interpret the day well and identify the variables that can turn out to be useful in building the model
+So yes we can consider a Linear Regression Model.
+
+day.head()
+
+#drop unnecessary columns
+day=day.drop(['instant','dteday','casual', 'registered','atemp'], axis=1)
+day.head()
+#Removal of Casual and Registered Users, because we need the target variable as 'cnt', becasue cnt tell us the total nunber of users whiich is what's required for our day modelling
+
+# STEP 3: DATA PREPARATION
+
+# Select all categorical variables
+day_categorical = day.select_dtypes(include=['object'])
+day_categorical.columns
+
+### Removing redundant columns when using get_dummies
+
+# One Hot Encoding - convert into dummies
+
+day_dummies = pd.get_dummies(day_categorical,drop_first=True)
+day_dummies.head()
+
+
+day_dummies.info()
+
+### Dropping all Categorical Columns
+
+list(day_categorical.columns)
+
+day = day.drop(list(day_categorical.columns),axis=1)
+
+day.columns
+
+day = pd.concat([day, day_dummies], axis=1)
+
+day.head()
+
+list(day.columns)
+
+day.head()
+
+day.shape
+
+#Now lets check the correlation between variables again
+#Heatmap to see correlation between variables
+plt.figure(figsize=(25, 20))
+sns.heatmap(day.corr(), cmap='Spectral', annot = True)
+plt.show()
+
+Inference:
+We can see that temperature,Summer season,June to october months are in good correlation with the 'count' variable. And seem to have good influence on the number of bike rentals.
+
+
+
+
+# Scaling
+
+Step 4: Splitting the day into Training and Testing Sets
+
+
+Before model building, you first need to perform the test-train split and scale the features.
+
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+
+list(day.describe().columns)
+
+By Choosing all the required Numerical Columns we can now continue woth day Scalign and day Modelling.. Let us denote these columns as VAR now.
+
+var = ['temp', 'humidity', 'windspeed']
+day[var] = scaler.fit_transform(day[var])
+
+Z =day[var]
+
+day.head()
+
+Z
+
+# STEP 5: Model Building 
+
+from sklearn.model_selection import train_test_split
+
+# We specify this so that the train and test day set always have the same rows, respectively
+#np.random.seed(0)
+day_train, day_test = train_test_split(day, train_size = 0.7, random_state = 100)
+
+#Rows and columns after split
+print(day_train.shape)
+print(day_test.shape)
+
+Rescaling the Features
+
+
+It is important to have all the variables on the same scale for the model to be easily interpretable. We can use standardization or normalization so that the units of the coefficients obtained are all on the same scale.
+    We will be using Standard Scaler Library.
+
+from sklearn.preprocessing import StandardScaler
+scaler = StandardScaler()
+
+list(day.describe().columns)
+
+# ur cols - temp, hum, windspeed
+var = ['temp','humidity','windspeed']
+day[var] = scaler.fit_transform(day[var])
+
+day.head()
+
+#Checking numeric variables(min and max) after scaling
+day.head()
+
+Dividing into X and Y sets for the model building
+`
+
+#Divide the day into X and y
+y_train = day_train.pop('count')
+X_train = day_train
+
+We will be using the LinearRegression function from SciKit Learn for its compatibility with RFE (which is a utility from sklearn)
+
+X = day.drop('count', axis=1)
+Y = day['count']
+
+X.shape
+
+Y.shape
+
+from sklearn.model_selection import train_test_split
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=0)
+
+X_train.shape
+
+X_test.shape
+
+Y_train.shape
+
+Y_test.shape
+
+from sklearn.linear_model import LinearRegression
+regressor = LinearRegression()
+regressor.fit(X_train, Y_train)
+
+regressor.coef_
+
+coeff_df = pd.DataFrame(regressor.coef_, X.columns, columns=['Coefficient'])
+
+coeff_df
+
+y_train = day.pop('count')
+X_train = day
+
+import statsmodels.api as sm
+
+# Add a constant
+X_train_lm = sm.add_constant(X_train[['temp','humidity','windspeed']])
+
+# Create a first fitted model
+lr = sm.OLS(y_train, X_train_lm).fit()
+
+# Check the parameters obtained
+
+lr.params
+
+# Let's visualise the day with a scatter plot and the fitted regression line for temp
+plt.scatter(X_train_lm.iloc[:, 1], y_train)
+plt.plot(X_train_lm.iloc[:, 1], 4080.348562 + 161.383993*X_train_lm.iloc[:, 1], 'r')
+plt.plot(X_train_lm.iloc[:, 1], 4080.348562 - 30.844655*X_train_lm.iloc[:, 1], 'r')
+plt.plot(X_train_lm.iloc[:, 1], 4080.348562 - 71.733160*X_train_lm.iloc[:, 1], 'r')
+plt.show()
+
+print(regressor.intercept_)
+
+# Make predictions
+
+Y_pred = regressor.predict(X_test)
+
+cmp = pd.DataFrame({
+    'Actual':Y_test,
+    'Predicted':Y_pred
+})
+cmp
+
+#(Residual Plot)
+
+# Evaluating the Algorithm
+from sklearn import metrics
+print('Mean Absolute Error:', metrics.mean_absolute_error(Y_test, Y_pred))
+print('Mean Squared Error:', metrics.mean_squared_error(Y_test, Y_pred))
+print('Root Mean Squared Error:', np.sqrt(metrics.mean_squared_error(Y_test, Y_pred)))
+
+from sklearn.metrics import r2_score
+r2_score(Y_test,Y_pred)
+
+# Adjusted r2
+
+yhat = regressor.predict(X_train)
+SS_Residual = sum((y_train-yhat)**2)
+SS_Total = sum((y_train-np.mean(y_train))**2)
+r_squared = 1 - (float(SS_Residual))/SS_Total
+adjusted_r_squared = 1 - (1-r_squared)*(len(y_train)-1)/(len(y_train)-X_train.shape[1]-1)
+print(r_squared, adjusted_r_squared)
+
+yhat = regressor.predict(X_test)
+SS_Residual = sum((Y_test-yhat)**2)
+SS_Total = sum((Y_test-np.mean(Y_test))**2)
+r_squared = 1 - (float(SS_Residual))/SS_Total
+adjusted_r_squared = 1 - (1-r_squared)*(len(Y_test)-1)/(len(Y_test)-X_test.shape[1]-1)
+print(r_squared, adjusted_r_squared)
+
+# Plotting y_test and y_pred to understand the spread
+
+fig = plt.figure()
+plt.scatter(Y_test, Y_pred)
+fig.suptitle('Y_test vs Y_pred', fontsize = 20)              # Plot heading 
+plt.xlabel('Y_test', fontsize = 18)                          # X-label
+plt.ylabel('Y_pred', fontsize = 16)     
+
+## RFE
+
+from sklearn.feature_selection import RFE
+import statsmodels.api as sm
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
+lm = LinearRegression()
+lm.fit(X_train, y_train)
+rfe = RFE(lm, 20) 
+rfe = rfe.fit(X_train, y_train)
+
+list(zip(X_train.columns, rfe.support_, rfe.ranking_))
+
+X_train.columns[rfe.support_]
+
+len(X_train.columns[rfe.support_])
+
+X_train_rfe = X_train[X_train.columns[rfe.support_]]
+X_train_rfe.head()
+
+# Adding a constant variable 
+import statsmodels.api as sm  
+X_train_rfe = sm.add_constant(X_train_rfe)
+
+# Running the linear model 
+lm = sm.OLS(y_train,X_train_rfe).fit()
+
+print(lm.summary())
+
+Checking VIF
+
+#Drop the constant term B0
+X_train_rfe = X_train_rfe.drop(['const'], axis=1)
+
+def build_model(X,y):
+    X = sm.add_constant(X) 
+    lm = sm.OLS(y,X).fit() 
+    print(lm.summary()) 
+    return X
+    
+def checkVIF(X):
+    vif = pd.DataFrame()
+    vif['Features'] = X.columns
+    vif['VIF'] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
+    vif['VIF'] = round(vif['VIF'], 2)
+    vif = vif.sort_values(by = "VIF", ascending = False)
+    return(vif)
+
+X_train_new = build_model(X_train_rfe, y_train)
+
+checkVIF(X_train_new)
+
+# Step 6: Residual Analysis of the train data
+
+
+y_train_cnt = lr.predict(X_train_lm)
+
+# Plot the histogram of the error terms
+fig = plt.figure()
+sns.distplot((y_train - y_train_cnt), bins = 10)
+fig.suptitle('Error Terms', fontsize = 10)                  
+plt.xlabel('Errors', fontsize = 18)                        
+
+We can see Error terms are normally distributed
+
+# THANK YOU
